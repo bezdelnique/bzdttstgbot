@@ -10,8 +10,8 @@ import tempfile
 
 #
 load_dotenv()
-# logging.basicConfig(level=logging.INFO, filename="py_log.log", filemode="w")
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("tgbot")
 
 #
 # You can set parse_mode by default. HTML or MARKDOWN
@@ -20,7 +20,7 @@ tb = telebot.TeleBot(os.environ.get("TELEGRAM_BOT_API_KEY"), parse_mode=None)
 tb.remove_webhook()
 
 allowed_user_list = [item.strip() for item in os.environ.get("TELEGRAM_BOT_ALLOWED_USER_LIST").split(",")]
-logging.info(f"allowed_user_list: {allowed_user_list}.")
+logger.info(f"allowed_user_list: {allowed_user_list}.")
 
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
@@ -30,18 +30,18 @@ client = OpenAI(
 
 
 @tb.message_handler(commands=['start'])
-def send_welcome(message):
+def send_welcome(message: types.Message):
     reply_message = None
     if message.chat.username not in allowed_user_list:
         reply_message = "Access denied " + message.chat.username + "!"
     else:
         reply_message = "Welcome to the club " + message.chat.username
-    logging.info(reply_message)
+    logger.info(reply_message)
     tb.reply_to(message, reply_message)
 
 
 @tb.message_handler(func=lambda message: True)
-def send_tts(message):
+def send_tts(message: types.Message):
     if message.chat.username not in allowed_user_list:
         reply_message = "Access denied " + message.chat.username + "!"
         tb.reply_to(message, reply_message)
@@ -49,7 +49,7 @@ def send_tts(message):
     chat_id = message.chat.id
 
     speech_file = tempfile.NamedTemporaryFile(delete=False)
-    logging.info(f"speech_file created: {speech_file.name}.")
+    logger.info(f"speech_file created: {speech_file.name}.")
     try:
         with client.audio.speech.with_streaming_response.create(
                 model="tts-1",
@@ -61,7 +61,7 @@ def send_tts(message):
     finally:
         speech_file.close()
         os.unlink(speech_file.name)
-        logging.info(f"speech_file unlinked: {speech_file.name}.")
+        logger.info(f"speech_file unlinked: {speech_file.name}.")
 
 
 tb.infinity_polling()
