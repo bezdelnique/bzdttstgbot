@@ -46,6 +46,8 @@ def send_tts(message: types.Message):
         reply_message = "Access denied " + message.chat.username + "!"
         tb.reply_to(message, reply_message)
 
+    tb.reply_to(message, "Сообщение принято, преобразования")
+
     chat_id = message.chat.id
 
     speech_file = tempfile.NamedTemporaryFile(delete=False)
@@ -58,6 +60,8 @@ def send_tts(message: types.Message):
         ) as response:
             response.stream_to_file(speech_file.name)
         tb.send_audio(chat_id, speech_file)
+    except:
+        tb.reply_to(message, "Не удалось преобразовать текст в речь")
     finally:
         speech_file.close()
         os.unlink(speech_file.name)
